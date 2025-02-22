@@ -1,5 +1,5 @@
 import { stat, writeFile, mkdir, readFile, rm } from "node:fs/promises"
-import { ZipStream } from "../src/stream.ts"
+import { ZipEntryStream, ZipStream } from "../src/stream.ts"
 import { createReadStream, ReadStream } from "node:fs"
 import { describe, it } from "node:test"
 import assert from "node:assert"
@@ -31,31 +31,46 @@ async function hasFilesDiff(filePath1: string, filePath2: string) {
 describe("ZipStream", () => {
   it("ファイル一つ", async () => {
     const outputDirPath = "./tests/assets/singleFile"
+    const zipFilePath = "./tests/assets/singleFile.zip"
 
     try {
-      const files = [ "test.txt" ]
-      const zipStream = new ZipStream(
-        files.map(file => (() => getFile(file)))
-      )
+      const filePaths = [ "test.txt" ]
+      const files = await Promise.all(filePaths.map(filePath => getFile(filePath)))
+      const zipStream = new ZipStream()
 
-      await writeFile("./tests/assets/singleFile.zip", zipStream.readable)
+      // await したら駄目、stream と writeFile でデッドロックになる
+      const writeFilePromise = writeFile(zipFilePath, zipStream.readable)
+
+      for (const file of files) {
+        await file
+          .stream()
+          .pipeThrough(
+            new ZipEntryStream({ fileName: file.name, lastModified: file.lastModified })
+          )
+          .pipeTo(zipStream.writable, { preventClose: true })
+      }
+
+      await zipStream.writable.close()
+      await writeFilePromise
+
       await mkdir(outputDirPath)
-      await assert.doesNotReject(exec(`tar -xf ./tests/assets/singleFile.zip -C ${outputDirPath}`), "cmd での解凍に失敗")
+      await assert.doesNotReject(exec(`tar -xf ${zipFilePath} -C ${outputDirPath}`), "cmd での解凍に失敗")
 
-      const hasDiffResults = await Promise.all(files.map(file => hasFilesDiff(`./tests/assets/${file}`, `${outputDirPath}/${file}`)))
+      const hasDiffResults = await Promise.all(filePaths.map(filePath => hasFilesDiff(`./tests/assets/${filePath}`, `${outputDirPath}/${filePath}`)))
 
       assert.ok(hasDiffResults.every(result => result === false), "バイナリが一致しなかった")
     } finally {
-      await rm("./tests/assets/singleFile.zip", { force: true })
+      await rm(zipFilePath, { force: true })
       await rm(outputDirPath, { force: true, recursive: true })
     }
   })
 
   it("ファイル複数", async () => {
     const outputDirPath = "./tests/assets/multipleFile"
+    const zipFilePath = "./tests/assets/multipleFile.zip"
 
     try {
-      const files = [
+      const filePaths = [
         // Photo by BALAZS GABOR on Unsplash
         // https://unsplash.com/@balazsgabor17
         "image1.jpg",
@@ -68,20 +83,30 @@ describe("ZipStream", () => {
         "test.txt",
         "テスト.txt"
       ]
-      const zipStream = new ZipStream(
-        files.map(file => (() => getFile(file)))
-      )
-      const filePath = "./tests/assets/multipleFile.zip"
+      const files = await Promise.all(filePaths.map(filePath => getFile(filePath)))
+      const zipStream = new ZipStream()
+      const writeFilePromise = writeFile(zipFilePath, zipStream.readable)
 
-      await writeFile(filePath, zipStream.readable)
+      for (const file of files) {
+        await file
+          .stream()
+          .pipeThrough(
+            new ZipEntryStream({ fileName: file.name, lastModified: file.lastModified })
+          )
+          .pipeTo(zipStream.writable, { preventClose: true })
+      }
+
+      await zipStream.writable.close()
+      await writeFilePromise
+
       await mkdir(outputDirPath)
-      await assert.doesNotReject(exec(`tar -xf ${filePath} -C ${outputDirPath}`), "cmd での解凍に失敗")
+      await assert.doesNotReject(exec(`tar -xf ${zipFilePath} -C ${outputDirPath}`), "cmd での解凍に失敗")
 
-      const hasDiffResults = await Promise.all(files.map(file => hasFilesDiff(`./tests/assets/${file}`, `${outputDirPath}/${file}`)))
+      const hasDiffResults = await Promise.all(filePaths.map(filePath => hasFilesDiff(`./tests/assets/${filePath}`, `${outputDirPath}/${filePath}`)))
 
       assert.ok(hasDiffResults.every(result => result === false), "バイナリが一致しなかった")
     } finally {
-      await rm("./tests/assets/multipleFile.zip", { force: true })
+      await rm(zipFilePath, { force: true })
       await rm(outputDirPath, { force: true, recursive: true })
     }
   })

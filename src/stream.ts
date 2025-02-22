@@ -1,24 +1,24 @@
 import { CRC32Calculator } from "./crc32.ts"
-import { createCentralDirectoryHeader, createDataDescriptor, createEndOfCentralDirectory, createLocalFileHeader, DATA_DESCRIPTOR_FIXED_SIZE, LOCAL_FILE_HEADER_FIXED_SIZE } from "./record.ts"
-import type { CentralDirectoryHeaderData, FileLike } from "./types.ts"
+import { indexOfLocalFileHeader, parseLocalFileHeader } from "./parser.ts"
+import { createCentralDirectoryHeader, createDataDescriptor, createEndOfCentralDirectory, createLocalFileHeader } from "./record.ts"
+import type { CentralDirectoryHeaderData } from "./types.ts"
+
+const internalMap = new Map<string, Omit<CentralDirectoryHeaderData, "offset">>()
 
 type ZipEntryData = {
-  offset: number
   fileName: string
   lastModified: number
-  getCentralDirectoryHeaderData: (centralDirectoryHeaderData: CentralDirectoryHeaderData) => void
 }
 
 // 何故か node v23.8.0 では deflate-raw の時だけ
 // CompressionStream の reader.read() の promise が永遠に resolve しないバグ？がある
 // 一応 pipeThrough や別の WritableStream を経由する方法は使える
-class ZipEntryStream extends TransformStream<ArrayBuffer> {
+export class ZipEntryStream extends TransformStream<ArrayBuffer> {
   constructor ({
-    offset,
     fileName,
     lastModified,
-    getCentralDirectoryHeaderData: getCentralDirectoryHeader
   }: ZipEntryData) {
+    const zipEntryId = globalThis.crypto.randomUUID()
     const calculator = new CRC32Calculator()
     const compressionStream = new CompressionStream("deflate-raw")
     let writableStream: WritableStream<Uint8Array>
@@ -28,7 +28,7 @@ class ZipEntryStream extends TransformStream<ArrayBuffer> {
 
     super({
       start(controller) {
-        const localFileHeader = createLocalFileHeader({ fileName, lastModified })
+        const localFileHeader = createLocalFileHeader({ fileName, lastModified, extraField: zipEntryId })
 
         writableStream = new WritableStream({
           write(chunk) {
@@ -63,85 +63,62 @@ class ZipEntryStream extends TransformStream<ArrayBuffer> {
 
         const dataDescriptor = createDataDescriptor({ crc32, compressedSize, uncompressedSize })
 
-        controller.enqueue(dataDescriptor)
-        getCentralDirectoryHeader({
+        internalMap.set(zipEntryId, {
           lastModified,
           crc32,
           compressedSize,
           uncompressedSize,
-          offset,
-          fileName
+          fileName,
+          extraField: zipEntryId
         })
+
+        controller.enqueue(dataDescriptor)
       }
     })
   }
 }
 
-export class ZipStream extends TransformStream {
-  #fileGetters: (() => Promise<FileLike>)[]
-  #getOffset: () => number
-  #getCentralDirectoryHeaderData: (cDH: CentralDirectoryHeaderData) => void
-
-  constructor(fileGetters: (() => Promise<FileLike>)[] = []) {
-    const centralDirectoryHeaderDatas: CentralDirectoryHeaderData[] = []
-
-    const getOffset = () => {
-      const lastCentralDirectoryHeader = centralDirectoryHeaderDatas.at(-1)
-
-      return lastCentralDirectoryHeader !== undefined
-        ? (
-            lastCentralDirectoryHeader.offset +
-            LOCAL_FILE_HEADER_FIXED_SIZE +
-            new TextEncoder().encode(lastCentralDirectoryHeader.fileName).byteLength +
-            lastCentralDirectoryHeader.compressedSize +
-            DATA_DESCRIPTOR_FIXED_SIZE
-          )
-        : 0
-    }
+export class ZipStream extends TransformStream<Uint8Array> {
+  constructor() {
+    const zipEntryIds: string[] = []
+    const zipEntryOffsets: number[] = []
+    let offset = 0
 
     super({
+      transform(chunk, controller) {
+        const localFileHeaderIndex = indexOfLocalFileHeader(chunk)
+
+        if (localFileHeaderIndex !== -1) {
+          const localFileHeader = parseLocalFileHeader(chunk.subarray(localFileHeaderIndex, chunk.length))
+
+          if (localFileHeader !== null) {
+            zipEntryIds.push(localFileHeader.extraField)
+            zipEntryOffsets.push(offset + localFileHeaderIndex)
+          }
+        }
+
+        offset += chunk.length
+        controller.enqueue(chunk)
+      },
+
       flush(controller) {
-        const centralDirectoryHeaders = centralDirectoryHeaderDatas.map(createCentralDirectoryHeader)
+        const centralDirectoryHeaderDatas = zipEntryIds
+          .map(zipEntryId => internalMap.get(zipEntryId))
+          .filter(maybeCDH => maybeCDH !== undefined)
+          .map((cDH, i) => ({ ...cDH, offset: zipEntryOffsets[i] }))
+
+        if (centralDirectoryHeaderDatas.length !== zipEntryIds.length) {
+          throw new Error("Central Directory Headers mismatch")
+        }
+
         const eocd = createEndOfCentralDirectory({
           centralDirectoryHeaderDatas,
-          offset: getOffset()
+          offset
         })
 
-        centralDirectoryHeaders.forEach(cDH => controller.enqueue(cDH))
+        centralDirectoryHeaderDatas.forEach(cDHData => controller.enqueue(createCentralDirectoryHeader(cDHData)))
         controller.enqueue(eocd)
       }
     })
-
-    this.#fileGetters = fileGetters
-    this.#getOffset = getOffset
-    this.#getCentralDirectoryHeaderData = (cDH: CentralDirectoryHeaderData) => centralDirectoryHeaderDatas.push(cDH)
-
-    this.#streamFiles()
-      .catch(e => {
-        throw new Error("Stream Error", { cause: e })
-      })
-  }
-
-  async #streamFiles() {
-    try {
-      for (const fileGetter of this.#fileGetters) {
-        const zipEntryData = await fileGetter()
-
-        await zipEntryData.stream()
-          .pipeThrough(
-            new ZipEntryStream({
-              fileName: zipEntryData.name,
-              offset: this.#getOffset(),
-              getCentralDirectoryHeaderData: this.#getCentralDirectoryHeaderData,
-              ...zipEntryData
-            })
-          )
-          .pipeTo(this.writable, { preventClose: true })
-      }
-
-      await this.writable.close()
-    } catch (e) {
-      await this.writable.abort(e)
-    }
   }
 }
