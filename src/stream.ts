@@ -4,62 +4,63 @@ import type { CentralDirectoryHeaderData, FileLike } from "./types.ts"
 
 type ZipEntryData = {
   offset: number
-  crc32Ref: { current: number }
   fileName: string
-  fileSize: number
   lastModified: number
   getCentralDirectoryHeaderData: (centralDirectoryHeaderData: CentralDirectoryHeaderData) => void
 }
 
-// 本当は ZipEntryStream の中で CompressionStream を使えたらいいのだが、
 // 何故か node v23.8.0 では deflate-raw の時だけ
-// reader.read() の promise が永遠に resolve しないバグ？がある
-// 一応 pipeThrough は使える
-class CRC32CalculatorStream extends TransformStream {
-  constructor({
-    getResult
-  }: { getResult: (result: number) => void }) {
-    const calculator = new CRC32Calculator()
-
-    super({
-      transform(chunk, controller) {
-        calculator.add(chunk)
-        controller.enqueue(chunk)
-      },
-
-      flush() {
-        getResult(calculator.finish())
-      }
-    })
-  }
-}
-
+// CompressionStream の reader.read() の promise が永遠に resolve しないバグ？がある
+// 一応 pipeThrough や別の WritableStream を経由する方法は使える
 class ZipEntryStream extends TransformStream<ArrayBuffer> {
   constructor ({
     offset,
-    crc32Ref,
     fileName,
-    fileSize,
     lastModified,
     getCentralDirectoryHeaderData: getCentralDirectoryHeader
   }: ZipEntryData) {
-    const uncompressedSize = fileSize
+    const calculator = new CRC32Calculator()
+    const compressionStream = new CompressionStream("deflate-raw")
+    let writableStream: WritableStream<Uint8Array>
+    let uncompressedSize = 0
     let compressedSize = 0
+    let pipeToPromise: Promise<void>
 
     super({
       start(controller) {
         const localFileHeader = createLocalFileHeader({ fileName, lastModified })
 
+        writableStream = new WritableStream({
+          write(chunk) {
+            compressedSize += chunk.byteLength
+
+            controller.enqueue(chunk)
+          }
+        })
+
+        pipeToPromise = compressionStream.readable.pipeTo(writableStream)
         controller.enqueue(localFileHeader)
       },
 
-      async transform(chunk, controller) {
-        controller.enqueue(chunk)
-        compressedSize += chunk.byteLength
+      async transform(chunk, _controller) {
+        uncompressedSize += chunk.byteLength
+        calculator.add(new Uint8Array(chunk))
+
+        const compressionStreamWriter = compressionStream.writable.getWriter()
+
+        await compressionStreamWriter.ready
+        await compressionStreamWriter.write(chunk)
+
+        compressionStreamWriter.releaseLock()
       },
 
       async flush(controller) {
-        const crc32 = crc32Ref.current
+        const crc32 = calculator.finish()
+
+        await compressionStream.writable.close()
+        // pipeToPromise が resolve した時点で writableStream は自動で close 済み
+        await pipeToPromise
+
         const dataDescriptor = createDataDescriptor({ crc32, compressedSize, uncompressedSize })
 
         controller.enqueue(dataDescriptor)
@@ -125,22 +126,12 @@ export class ZipStream extends TransformStream {
     try {
       for (const fileGetter of this.#fileGetters) {
         const zipEntryData = await fileGetter()
-        const crc32Ref = { current: 0 }
-        const getResult = (result: number) => crc32Ref.current = result
 
         await zipEntryData.stream()
           .pipeThrough(
-            new CRC32CalculatorStream({ getResult })
-          )
-          .pipeThrough(
-            new CompressionStream("deflate-raw")
-          )
-          .pipeThrough(
             new ZipEntryStream({
               fileName: zipEntryData.name,
-              fileSize: zipEntryData.size,
               offset: this.#getOffset(),
-              crc32Ref,
               getCentralDirectoryHeaderData: this.#getCentralDirectoryHeaderData,
               ...zipEntryData
             })
