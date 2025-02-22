@@ -1,0 +1,26 @@
+{
+  "name": "web-stream-zip",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "stream",
+    "zip"
+  ],
+  "author": "rururux",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "jiti": "^2.4.2",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
