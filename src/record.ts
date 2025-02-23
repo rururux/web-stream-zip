@@ -5,11 +5,20 @@ export const DATA_DESCRIPTOR_FIXED_SIZE = 12
 export const CENTRAL_DIRECTORY_HEADER_FIXED_SIZE = 46
 export const END_OF_CENTRAL_DIRECTORY_FIXED_SIZE = 22
 
-export function createLocalFileHeader({ fileName, lastModified }: LocalFileHeaderData) {
-  const fileNameBytes = new TextEncoder().encode(fileName)
+const EXTRA_FIELD_HEADER_SIZE = 4
+
+export function createLocalFileHeader({ fileName, lastModified, extraField }: LocalFileHeaderData) {
+  const textEncoder = new TextEncoder()
+  const fileNameBytes = textEncoder.encode(fileName)
   const fileNameBytesLength = fileNameBytes.length
+  const extraFieldBytes = textEncoder.encode(extraField ?? "")
+  const extraFieldBytesLength = extraFieldBytes.length
   const dosDateTime = createMsDosTimestamp(lastModified)
-  const buffer = new ArrayBuffer(LOCAL_FILE_HEADER_FIXED_SIZE + fileNameBytesLength)
+  const buffer = new ArrayBuffer(
+    LOCAL_FILE_HEADER_FIXED_SIZE +
+    fileNameBytesLength +
+    (EXTRA_FIELD_HEADER_SIZE + extraFieldBytesLength)
+  )
   const dataView = new DataView(buffer)
   const bytes = new Uint8Array(buffer)
 
@@ -33,11 +42,19 @@ export function createLocalFileHeader({ fileName, lastModified }: LocalFileHeade
   dataView.setUint32(22, 0, true)
   // file name length
   dataView.setUint16(26, fileNameBytesLength, true)
-  // extra field length (skip)
-  dataView.setUint16(28, 0, true)
+  // extra field length
+  dataView.setUint16(28, EXTRA_FIELD_HEADER_SIZE + extraFieldBytesLength, true)
 
   // set filename
   bytes.set(fileNameBytes, LOCAL_FILE_HEADER_FIXED_SIZE)
+
+  // set extra field
+  const extraFiledOffset = LOCAL_FILE_HEADER_FIXED_SIZE + fileNameBytesLength
+
+  dataView.setUint16(extraFiledOffset, 0xFFFF, true)
+  dataView.setUint16(extraFiledOffset + 2, extraFieldBytesLength, true)
+
+  bytes.set(extraFieldBytes, extraFiledOffset + EXTRA_FIELD_HEADER_SIZE)
 
   return bytes
 }
@@ -54,11 +71,18 @@ export function createDataDescriptor({ crc32, compressedSize, uncompressedSize }
   return bytes
 }
 
-export function createCentralDirectoryHeader({ fileName, crc32, compressedSize, uncompressedSize, offset, lastModified }: CentralDirectoryHeaderData) {
-  const fileNameBytes = new TextEncoder().encode(fileName)
+export function createCentralDirectoryHeader({ fileName, crc32, compressedSize, uncompressedSize, offset, lastModified, extraField }: CentralDirectoryHeaderData) {
+  const textEncoder = new TextEncoder()
+  const fileNameBytes = textEncoder.encode(fileName)
   const fileNameBytesLength = fileNameBytes.length
+  const extraFieldBytes = textEncoder.encode(extraField ?? "")
+  const extraFieldBytesLength = extraFieldBytes.length
   const dosDateTime = createMsDosTimestamp(lastModified)
-  const buffer = new ArrayBuffer(CENTRAL_DIRECTORY_HEADER_FIXED_SIZE + fileNameBytesLength)
+  const buffer = new ArrayBuffer(
+    CENTRAL_DIRECTORY_HEADER_FIXED_SIZE +
+    fileNameBytesLength +
+    (EXTRA_FIELD_HEADER_SIZE + extraFieldBytesLength)
+  )
   const dataView = new DataView(buffer)
   const bytes = new Uint8Array(buffer)
 
@@ -85,7 +109,7 @@ export function createCentralDirectoryHeader({ fileName, crc32, compressedSize, 
   // file name length                2 bytes
   dataView.setUint16(28, fileNameBytesLength, true)
   // extra field length              2 bytes
-  dataView.setUint16(30, 0, true)
+  dataView.setUint16(30, EXTRA_FIELD_HEADER_SIZE + extraFieldBytesLength, true)
   // file comment length             2 bytes
   dataView.setUint16(32, 0, true)
   // disk number start               2 bytes
@@ -100,6 +124,13 @@ export function createCentralDirectoryHeader({ fileName, crc32, compressedSize, 
   // file name (variable size)
   bytes.set(fileNameBytes, CENTRAL_DIRECTORY_HEADER_FIXED_SIZE)
 
+  const extraFiledOffset = CENTRAL_DIRECTORY_HEADER_FIXED_SIZE + fileNameBytesLength
+
+  dataView.setUint16(extraFiledOffset, 0xFFFF, true)
+  dataView.setUint16(extraFiledOffset + 2, extraFieldBytesLength, true)
+
+  bytes.set(extraFieldBytes, extraFiledOffset + EXTRA_FIELD_HEADER_SIZE)
+
   return bytes
 }
 
@@ -109,7 +140,11 @@ export function createEndOfCentralDirectory({ centralDirectoryHeaderDatas, offse
   const bytes = new Uint8Array(buffer)
   const textEncoder = new TextEncoder()
   const centralDirectorySize = centralDirectoryHeaderDatas.reduce((prv, cur) => (
-    prv + (CENTRAL_DIRECTORY_HEADER_FIXED_SIZE + textEncoder.encode(cur.fileName).byteLength)
+    prv + (
+      CENTRAL_DIRECTORY_HEADER_FIXED_SIZE +
+      textEncoder.encode(cur.fileName).byteLength +
+      (EXTRA_FIELD_HEADER_SIZE + textEncoder.encode(cur.extraField).byteLength)
+    )
   ), 0)
 
   // end of central dir signature    4 bytes  (0x06054b50)

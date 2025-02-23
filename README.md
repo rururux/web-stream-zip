@@ -10,51 +10,48 @@ npm install web-stream-zip
 
 ## Usage
 
-### Edge Server (e.g., Cloudflare Workers)
-
 ```javascript
-import { ZipStream } from "web-stream-zip"
+import { ZipStream, ZipEntryStream, getZipContentType, getZipContentDisposition } from "web-stream-zip"
 
-addEventListener("fetch", event => {
-  event.respondWith(handleRequest(event.request))
+const files: File[] = await fetchFiles()
+const zipStream = new ZipStream()
+
+(async () => {
+  for (const file of files) {
+    await file
+      .stream()
+      .pipeThrough(
+        new ZipEntryStream({ fileName: file.name, lastModified: file.lastModified })
+      )
+      .pipeTo(zipStream.writable, { preventClose: true })
+  }
+
+  await zipStream.writable.close()
+})()
+
+return new Response(zipStream.readable, {
+  headers: {
+    "Content-Type": getZipContentType() // "application/zip"
+    "Content-Disposition": getZipContentDisposition("sample.zip") // `attachment: filename="${fileName}"`
+  }
 })
 
-async function handleRequest(request) {
-  const fileGetters = [
-    async () => {
-      const response = await fetch("https://example.com/path/to/your/file.jpg")
-      const blob = await response.blob()
-
-      return {
-        name: "file.jpg",
-        size: blob.size,
-        lastModified: Date.now(),
-        stream: () => blob.stream()
-      }
-    }
-  ]
-
-  const zipStream = new ZipStream(fileGetters)
-
-  return new Response(zipStream.readable, {
-    headers: { "Content-Type": "application/zip" }
-  })
-}
 ```
 
 ## API
 
 ```typescript
-type FileLike = {
-  name: string
-  size: number
-  lastModified: number
-  stream(): ReadableStream<Blob>
+class ZipStream extends TransformStream {
+  constructor()
 }
 
-class ZipStream extends TransformStream {
-  constructor(fileGetters: Array<(() => Promise<FileLike>)>)
+class ZipEntryStream extends TransformStream {
+  constructor(entryMetadata: { fileName: string, lastModified: number })
 }
+
+// utils
+function getZipContentType(): "application/zip"
+function getZipContentDisposition<FileName extends string>(fileName: FileName): `attachment: filename="${FileName}"`
 ```
 
 ## License

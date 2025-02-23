@@ -1,13 +1,7 @@
-export type FileLike = {
-  name: File["name"]
-  size: File["size"]
-  lastModified: File["lastModified"]
-  stream: File["stream"]
-}
-
 export type LocalFileHeaderData = {
   fileName: string
   lastModified: number
+  extraField: string
 }
 
 export type DataDescriptorData = {
@@ -23,6 +17,7 @@ export type CentralDirectoryHeaderData = {
   uncompressedSize: number
   offset: number
   fileName: string
+  extraField: string
 }
 
 export type EndOfCentralDirectoryData = {
