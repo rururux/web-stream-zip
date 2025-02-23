@@ -15,8 +15,8 @@
   "include": [ "index.ts", "src/**/*" ],
   "exclude": [ "node_modules" ],
   "references": [
-    "./tests/node/tsconfig.node.json",
-    "./tests/deno/tsconfig.deno.json"
+    { "path": "./tests/node/tsconfig.node.json" },
+    { "path": "./tests/deno/tsconfig.deno.json" }
   ],
   "esModuleInterop": true,
 }
