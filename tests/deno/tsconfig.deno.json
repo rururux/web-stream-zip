@@ -1,0 +1,7 @@
+{
+  "files": [ "./**/*.ts" ],
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "deno.window"],
+  }
+}

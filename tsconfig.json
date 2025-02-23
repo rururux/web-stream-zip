@@ -1,20 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES2024",
-    "module": "ES2022",
+    "target": "ESNext",
+    "module": "ESNext",
     "lib": [ "dom" ],
-    "types": [ "node" ],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
     "rootDir": "./",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["index.ts", "src/**/*", "test/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"],
+  "include": [ "index.ts", "src/**/*" ],
+  "exclude": [ "node_modules" ],
+  "references": [
+    "./tests/deno/tsconfig.deno.json"
+  ],
   "esModuleInterop": true,
 }
