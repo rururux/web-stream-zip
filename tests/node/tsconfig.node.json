@@ -1,0 +1,7 @@
+{
+  "files": [ "./**/*.ts" ],
+  "extends": [ "../../tsconfig.json" ],
+  "compilerOptions": {
+    "types": [ "node" ]
+  }
+}

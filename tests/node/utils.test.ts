@@ -1,6 +1,6 @@
 import { describe, it } from "node:test"
 import assert from "node:assert"
-import { getZipContentType, getZipContentDisposition } from "../src/utils.ts"
+import { getZipContentType, getZipContentDisposition } from "../../src/utils.ts"
 
 describe("utils", () => {
   it("getZipContentType", () => {

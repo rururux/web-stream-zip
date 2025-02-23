@@ -1,5 +1,5 @@
 import { stat, writeFile, mkdir, readFile, rm } from "node:fs/promises"
-import { ZipEntryStream, ZipStream } from "../src/stream.ts"
+import { ZipEntryStream, ZipStream } from "../../src/stream.ts"
 import { createReadStream, ReadStream } from "node:fs"
 import { describe, it } from "node:test"
 import assert from "node:assert"

@@ -1,6 +1,6 @@
 import assert from "node:assert"
 import { describe, it } from "node:test"
-import { CRC32Calculator } from "../src/crc32.ts"
+import { CRC32Calculator } from "../../src/crc32.ts"
 import { readFile } from "node:fs/promises"
 import zlib from "node:zlib"
 
