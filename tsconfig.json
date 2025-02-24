@@ -1,20 +1,23 @@
 {
   "compilerOptions": {
-    "target": "ES2024",
-    "module": "ES2022",
-    "lib": [ "dom" ],
-    "types": [ "node" ],
+    "target": "ESNext",
+    "module": "ESNext",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
+    "baseUrl": ".",
     "rootDir": "./",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "jsx": "react-jsx",
   },
-  "include": ["index.ts", "src/**/*", "test/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"],
+  "exclude": [ "node_modules" ],
+  "references": [
+    { "path": "./tsconfig.main.json" },
+    { "path": "./tests/node/tsconfig.node.json" },
+    { "path": "./tests/deno/tsconfig.deno.json" },
+    { "path": "./tests/browser/tsconfig.browser.json" }
+  ],
   "esModuleInterop": true,
 }

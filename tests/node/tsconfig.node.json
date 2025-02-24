@@ -1,0 +1,9 @@
+{
+  "files": [ "./**/*.ts" ],
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "types": [ "node" ],
+    "noEmit": true
+  }
+}

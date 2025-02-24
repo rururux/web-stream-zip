@@ -1,8 +1,7 @@
 import { stat, writeFile, mkdir, readFile, rm } from "node:fs/promises"
-import { ZipEntryStream, ZipStream } from "../src/stream.ts"
+import { ZipEntryStream, ZipStream } from "../../src/stream.ts"
 import { createReadStream, ReadStream } from "node:fs"
-import { describe, it } from "node:test"
-import assert from "node:assert"
+import { describe, it, expect } from "vitest"
 import { exec as _exec } from "node:child_process"
 import util from "node:util"
 
@@ -54,11 +53,11 @@ describe("ZipStream", () => {
       await writeFilePromise
 
       await mkdir(outputDirPath)
-      await assert.doesNotReject(exec(`tar -xf ${zipFilePath} -C ${outputDirPath}`), "cmd での解凍に失敗")
+      await expect(exec(`tar -xf ${zipFilePath} -C ${outputDirPath}`), "cmd での解凍に失敗").resolves.not.toThrow()
 
       const hasDiffResults = await Promise.all(filePaths.map(filePath => hasFilesDiff(`./tests/assets/${filePath}`, `${outputDirPath}/${filePath}`)))
 
-      assert.ok(hasDiffResults.every(result => result === false), "バイナリが一致しなかった")
+      expect(hasDiffResults.every(result => result === false), "バイナリが一致しなかった").not.toBeFalsy()
     } finally {
       await rm(zipFilePath, { force: true })
       await rm(outputDirPath, { force: true, recursive: true })
@@ -100,11 +99,11 @@ describe("ZipStream", () => {
       await writeFilePromise
 
       await mkdir(outputDirPath)
-      await assert.doesNotReject(exec(`tar -xf ${zipFilePath} -C ${outputDirPath}`), "cmd での解凍に失敗")
+      await expect(exec(`tar -xf ${zipFilePath} -C ${outputDirPath}`), "cmd での解凍に失敗").resolves.not.toThrow()
 
       const hasDiffResults = await Promise.all(filePaths.map(filePath => hasFilesDiff(`./tests/assets/${filePath}`, `${outputDirPath}/${filePath}`)))
 
-      assert.ok(hasDiffResults.every(result => result === false), "バイナリが一致しなかった")
+      expect(hasDiffResults.every(result => result === false), "バイナリが一致しなかった").not.toBeFalsy()
     } finally {
       await rm(zipFilePath, { force: true })
       await rm(outputDirPath, { force: true, recursive: true })
@@ -159,11 +158,11 @@ describe("ZipStream", () => {
       await writeFilePromise
 
       await mkdir(outputDirPath)
-      await assert.doesNotReject(exec(`tar -xf ${zipFilePath} -C ${outputDirPath}`), "cmd での解凍に失敗")
+      await expect(exec(`tar -xf ${zipFilePath} -C ${outputDirPath}`), "cmd での解凍に失敗").resolves.not.toThrow()
 
       const hasDiffResults = await Promise.all(filePaths.map(filePath => hasFilesDiff(`./tests/assets/${filePath}`, `${outputDirPath}/${filePath}`)))
 
-      assert.ok(hasDiffResults.every(result => result === false), "バイナリが一致しなかった")
+      expect(hasDiffResults.every(result => result === false), "バイナリが一致しなかった").not.toBeFalsy()
     } finally {
       await rm(zipFilePath, { force: true })
       await rm(outputDirPath, { force: true, recursive: true })

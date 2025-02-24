@@ -13,7 +13,7 @@ type ZipEntryData = {
 // 何故か node v23.8.0 では deflate-raw の時だけ
 // CompressionStream の reader.read() の promise が永遠に resolve しないバグ？がある
 // 一応 pipeThrough や別の WritableStream を経由する方法は使える
-export class ZipEntryStream extends TransformStream<ArrayBuffer> {
+export class ZipEntryStream extends TransformStream<Uint8Array> {
   constructor ({
     fileName,
     lastModified,
@@ -78,7 +78,7 @@ export class ZipEntryStream extends TransformStream<ArrayBuffer> {
   }
 }
 
-export class ZipStream extends TransformStream<Uint8Array> {
+export class ZipStream extends TransformStream<Uint8Array, Uint8Array> {
   constructor() {
     const zipEntryIds: string[] = []
     const zipEntryOffsets: number[] = []

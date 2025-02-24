@@ -1,6 +1,6 @@
 {
   "name": "web-stream-zip",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "",
   "main": "index.ts",
   "type": "module",
@@ -15,7 +15,18 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.13.4",
-    "typescript": "^5.7.3"
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/browser": "^3.0.6",
+    "playwright": "^1.50.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.1",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.0.6",
+    "vitest-browser-react": "^0.1.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

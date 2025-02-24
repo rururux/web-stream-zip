@@ -1,6 +1,5 @@
-import assert from "node:assert"
-import { describe, it } from "node:test"
-import { CRC32Calculator } from "../src/crc32.ts"
+import { describe, it, expect } from "vitest"
+import { CRC32Calculator } from "../../src/crc32.ts"
 import { readFile } from "node:fs/promises"
 import zlib from "node:zlib"
 
@@ -11,10 +10,7 @@ describe("CRC32Calculator", () => {
 
     calculator.add(fileBuffer)
 
-    assert.equal(
-      calculator.finish(),
-      zlib.crc32(fileBuffer)
-    )
+    expect(calculator.finish()).equal(zlib.crc32(fileBuffer))
   })
 
   it("image1.jpg", async () => {
@@ -23,9 +19,6 @@ describe("CRC32Calculator", () => {
 
     calculator.add(fileBuffer)
 
-    assert.equal(
-      calculator.finish(),
-      zlib.crc32(fileBuffer)
-    )
+    expect(calculator.finish()).equal(zlib.crc32(fileBuffer))
   })
 })

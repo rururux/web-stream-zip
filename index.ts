@@ -6,5 +6,5 @@
  * All rights reserved.
  */
 
-export { ZipStream } from "./src/stream.ts"
+export { ZipStream, ZipEntryStream } from "./src/stream.ts"
 export { getZipContentType, getZipContentDisposition } from "./src/utils.ts"
