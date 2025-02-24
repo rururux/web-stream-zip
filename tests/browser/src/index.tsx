@@ -1,6 +1,6 @@
 import { ChangeEvent, useState } from "react"
 import styles from "./styles.module.css"
-import { ZipStream, ZipEntryStream } from "../../../../index"
+import { ZipStream, ZipEntryStream } from "../../../index"
 
 export default function Page() {
   const [ files, setFiles ] = useState<File[]>([])
@@ -41,8 +41,8 @@ export default function Page() {
 
   return (
     <div className={styles.container}>
-      <input type="file" name="files" multiple accept="image/*" onChange={handleChange} />
-      <button onClick={handleClick}>Download</button>
+      <input type="file" name="files" multiple accept="image/*" data-testid="filePicker" onChange={handleChange} />
+      <button data-testid="button" onClick={handleClick}>Download</button>
     </div>
   )
 }
