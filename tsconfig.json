@@ -17,6 +17,7 @@
     { "path": "./tsconfig.main.json" },
     { "path": "./tests/node/tsconfig.node.json" },
     { "path": "./tests/deno/tsconfig.deno.json" },
+    { "path": "./tests/browser/tsconfig.browser.json" }
   ],
   "esModuleInterop": true,
 }

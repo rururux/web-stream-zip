@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "files": [ "./**/*.ts", "./**/*.tsx" ],
+  "compilerOptions": {
+    "composite": true,
+    "types": [ "react", "react-dom" ],
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noEmit": true
+  }
+}
