@@ -1,7 +1,7 @@
 import type { CentralDirectoryHeaderData, DataDescriptorData, EndOfCentralDirectoryData, LocalFileHeaderData } from "./types.ts"
 
 export const LOCAL_FILE_HEADER_FIXED_SIZE = 30
-export const DATA_DESCRIPTOR_FIXED_SIZE = 12
+export const DATA_DESCRIPTOR_FIXED_SIZE = 16
 export const CENTRAL_DIRECTORY_HEADER_FIXED_SIZE = 46
 export const END_OF_CENTRAL_DIRECTORY_FIXED_SIZE = 22
 
@@ -64,9 +64,10 @@ export function createDataDescriptor({ crc32, compressedSize, uncompressedSize }
   const dataView = new DataView(buffer)
   const bytes = new Uint8Array(buffer)
 
-  dataView.setUint32(0, crc32, true)
-  dataView.setUint32(4, compressedSize, true)
-  dataView.setUint32(8, uncompressedSize, true)
+  dataView.setUint32(0, 0x08074b50, true)
+  dataView.setUint32(4, crc32, true)
+  dataView.setUint32(8, compressedSize, true)
+  dataView.setUint32(12, uncompressedSize, true)
 
   return bytes
 }
