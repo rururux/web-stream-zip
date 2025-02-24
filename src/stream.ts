@@ -78,7 +78,7 @@ export class ZipEntryStream extends TransformStream<Uint8Array> {
   }
 }
 
-export class ZipStream extends TransformStream<Uint8Array> {
+export class ZipStream extends TransformStream<Uint8Array, Uint8Array> {
   constructor() {
     const zipEntryIds: string[] = []
     const zipEntryOffsets: number[] = []
