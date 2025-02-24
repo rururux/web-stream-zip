@@ -1,16 +1,22 @@
 # Web Stream Zip Library
 
-A versatile library for creating ZIP files using web streams. This library works in Node.js, deno, browser, and edge server environments.
+A lightweight ZIP file creation library using Web Streams API. Works universally across modern JavaScript runtimes:
 
-## Installation
+- Node.js (v18+)
+- Deno
+- Modern Browsers
+- Edge Runtimes (Cloudflare Workers, Vercel Edge Functions, etc.)
 
-```bash
-npm install web-stream-zip
-```
+## Key Features
+
+- 🌐 Universal - Works in any environment supporting Web Streams API
+- 🪽 Lightweight - Zero dependencies, pure Web Streams implementation
+- 🚰 Streaming - Process large files without loading them into memory
+- 📦 Standards-based - Uses standard Web APIs only
 
 ## Usage
 
-```javascript
+```typescript
 import { ZipStream, ZipEntryStream, getZipContentType, getZipContentDisposition } from "web-stream-zip"
 
 const files: File[] = await fetchFiles()
