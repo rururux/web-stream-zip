@@ -23,8 +23,7 @@ async function hasFilesDiff(filePath1: string, filePath2: string) {
   const file1 = await readFile(filePath1)
   const file2 = await readFile(filePath2)
 
-  // @ts-expect-error https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set/symmetricDifference
-  return new Set(file1).symmetricDifference(new Set(file2)).size !== 0
+  return file1.length !== file2.length || file1.some((byte, i) => byte !== file2[i])
 }
 
 describe("ZipStream", () => {
