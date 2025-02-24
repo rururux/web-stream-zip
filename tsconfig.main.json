@@ -1,5 +1,11 @@
 {
   "extends": "./tsconfig.json",
-  "files": [ "index.ts", "src/**/*" ],
-  "lib": [ "dom" ],
+  "include": [ "index.ts", "src/**/*" ],
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "composite": true
+  }
 }
