@@ -2,21 +2,21 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "lib": [ "dom" ],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
     "rootDir": "./",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "jsx": "react-jsx",
   },
-  "include": [ "index.ts", "src/**/*" ],
   "exclude": [ "node_modules" ],
   "references": [
+    { "path": "./tsconfig.main.json" },
     { "path": "./tests/node/tsconfig.node.json" },
-    { "path": "./tests/deno/tsconfig.deno.json" }
+    { "path": "./tests/deno/tsconfig.deno.json" },
   ],
   "esModuleInterop": true,
 }
