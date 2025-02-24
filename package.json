@@ -1,11 +1,11 @@
 {
   "name": "web-stream-zip",
   "version": "1.0.0",
-  "description": "",
+  "description": "A lightweight ZIP file creation library using Web Streams API. Works universally across modern JavaScript runtimes.",
   "main": "index.ts",
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "vitest"
   },
   "keywords": [
     "stream",
@@ -27,10 +27,5 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.6",
     "vitest-browser-react": "^0.1.1"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }
